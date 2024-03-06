@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
 
 class HomePage extends StatefulWidget {
   final bool isList;
-  const HomePage({Key? key, required this.isList}) : super(key: key);
+  const HomePage({super.key, required this.isList});
 
   @override
   State<HomePage> createState() => _HomePageState();

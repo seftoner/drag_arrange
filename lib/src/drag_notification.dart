@@ -12,7 +12,7 @@ class DragNotification extends StatefulWidget {
   /// Creates a [DragNotification] widget.
   ///
   /// The [child] is the widget that you want to wrap with scroll detection.
-  const DragNotification({required this.child, Key? key}) : super(key: key);
+  const DragNotification({required this.child, super.key});
 
   /// The child widget that will be wrapped by the [DragNotification].
   final Widget child;
