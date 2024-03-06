@@ -23,35 +23,28 @@ class MyApp extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const HomePage(isList: true),
+                for (final type in GridType.values)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HomePage(type: type),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(switch (type) {
+                          GridType.list => "List",
+                          GridType.count => "Grid Count",
+                          GridType.extent => "Grid Extent",
+                        }),
                       ),
-                    );
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text("List"),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const HomePage(isList: false),
-                      ),
-                    );
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text("Grid"),
-                  ),
-                ),
               ],
             ),
           ),
@@ -61,9 +54,16 @@ class MyApp extends StatelessWidget {
   }
 }
 
+enum GridType {
+  list,
+  count,
+  extent,
+}
+
 class HomePage extends StatefulWidget {
-  final bool isList;
-  const HomePage({Key? key, required this.isList}) : super(key: key);
+  final GridType type;
+
+  const HomePage({Key? key, required this.type}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -71,9 +71,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _dragEnabled = true;
+
   @override
   Widget build(BuildContext context) {
-    final nonDraggable = ReorderableStaggeredScrollViewGridItem(
+    final nonDraggable = ReorderableStaggeredScrollViewGridCountItem(
       key: ValueKey(10.toString()),
       mainAxisCellCount: 1,
       crossAxisCellCount: Random().nextInt(2) + 1,
@@ -85,7 +86,12 @@ class _HomePageState extends State<HomePage> {
     );
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isList ? "List Example" : "Grid Example"),
+        title: Text(switch (widget.type) {
+          // TODO: Handle this case.
+          GridType.list => "List Example",
+          GridType.count => "Grid Count Example",
+          GridType.extent => "Grid Extent Example",
+        }),
         actions: [
           IconButton(
               onPressed: () {
@@ -98,7 +104,7 @@ class _HomePageState extends State<HomePage> {
               ))
         ],
       ),
-      body: widget.isList
+      body: widget.type == GridType.list
           ? ReorderableStaggeredScrollView.list(
               enable: _dragEnabled,
               padding: const EdgeInsets.all(16),
@@ -110,34 +116,34 @@ class _HomePageState extends State<HomePage> {
               onDragEnd: (details, item) {
                 debugPrint('onDragEnd: $details ${item.key}');
               },
-              isNotDragList: [nonDraggable],
-              children: List.generate(
-                5,
-                (index) => ReorderableStaggeredScrollViewListItem(
-                  key: ValueKey(index.toString()),
-                  widget: Card(
-                      child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Center(child: Text('Item $index')),
-                  )),
-                ),
-              )..addAll(
-                  [
-                    nonDraggable,
-                    ...List.generate(
-                      5,
-                      (index) => ReorderableStaggeredScrollViewListItem(
-                        key: ValueKey('${index + 5}'),
-                        widget: Card(
-                            child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Center(child: Text('Item ${index + 5}')),
-                        )),
-                      ),
-                    )
-                  ],
-                ),
-            )
+              isNotDragList: [
+                  nonDraggable
+                ],
+              children: [
+                  ...List.generate(
+                    5,
+                    (index) => ReorderableStaggeredScrollViewListItem(
+                      key: ValueKey(index.toString()),
+                      widget: Card(
+                          child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Center(child: Text('Item $index')),
+                      )),
+                    ),
+                  ),
+                  nonDraggable,
+                  ...List.generate(
+                    5,
+                    (index) => ReorderableStaggeredScrollViewListItem(
+                      key: ValueKey('${index + 5}'),
+                      widget: Card(
+                          child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Center(child: Text('Item ${index + 5}')),
+                      )),
+                    ),
+                  )
+                ])
           : ReorderableStaggeredScrollView.grid(
               enable: _dragEnabled,
               padding: const EdgeInsets.all(16),
@@ -157,29 +163,49 @@ class _HomePageState extends State<HomePage> {
               onDragUpdate: (details, item) {
                 print('onDragUpdate: details $details item $item');
               },
-              isNotDragList: [nonDraggable],
-              children: List.generate(
-                5,
-                (index) => ReorderableStaggeredScrollViewGridItem(
-                  key: ValueKey(index.toString()),
-                  mainAxisCellCount: 1,
-                  crossAxisCellCount: Random().nextInt(2) + 1,
-                  widget: Card(child: Center(child: Text('Item $index'))),
-                ),
-              )..addAll([
+              isNotDragList: [
+                  nonDraggable
+                ],
+              children: [
+                  ...List.generate(
+                    5,
+                    (index) => widget.type == GridType.count
+                        ? ReorderableStaggeredScrollViewGridCountItem(
+                            key: ValueKey(index.toString()),
+                            mainAxisCellCount: 1,
+                            crossAxisCellCount: Random().nextInt(2) + 1,
+                            widget:
+                                Card(child: Center(child: Text('Item $index'))),
+                          )
+                        : ReorderableStaggeredScrollViewGridExtentItem(
+                            key: ValueKey(index.toString()),
+                            mainAxisExtent: Random().nextInt(200) + 100,
+                            crossAxisCellCount: Random().nextInt(2) + 1,
+                            widget:
+                                Card(child: Center(child: Text('Item $index'))),
+                          ),
+                  ),
                   nonDraggable,
                   ...List.generate(
                     5,
-                    (index) => ReorderableStaggeredScrollViewGridItem(
-                      key: ValueKey('${index + 5}'),
-                      mainAxisCellCount: 1,
-                      crossAxisCellCount: Random().nextInt(2) + 1,
-                      widget:
-                          Card(child: Center(child: Text('Item ${index + 5}'))),
-                    ),
+                    (index) => widget.type == GridType.count
+                        ? ReorderableStaggeredScrollViewGridCountItem(
+                            key: ValueKey((index + 5).toString()),
+                            mainAxisCellCount: 1,
+                            crossAxisCellCount: Random().nextInt(2) + 1,
+                            widget: Card(
+                                child:
+                                    Center(child: Text('Item ${index + 5}'))),
+                          )
+                        : ReorderableStaggeredScrollViewGridExtentItem(
+                            key: ValueKey((index + 5).toString()),
+                            mainAxisExtent: Random().nextInt(200) + 100,
+                            crossAxisCellCount: Random().nextInt(2) + 1,
+                            widget:
+                                Card(child: Center(child: Text('Item ${index + 5}'))),
+                          ),
                   )
                 ]), // Provide the list of reorderable items
-            ),
     );
   }
 }
