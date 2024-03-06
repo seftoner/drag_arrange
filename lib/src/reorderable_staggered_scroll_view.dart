@@ -32,8 +32,40 @@ class ReorderableStaggeredScrollViewListItem {
 }
 
 /// Represents an item in a grid layout within a [ReorderableStaggeredScrollView].
-class ReorderableStaggeredScrollViewGridItem
+abstract class ReorderableStaggeredScrollViewGridItem
     extends ReorderableStaggeredScrollViewListItem {
+  /// Creates a [ReorderableStaggeredScrollViewGridItem].
+  ///
+  /// The [key] is a required unique identifier for the item.
+  /// The [mainAxisCellCount] specifies the number of cells along the main axis.
+  /// The [crossAxisCellCount] specifies the number of cells along the cross axis.
+  /// The [widget] is the widget content of the item.
+  const ReorderableStaggeredScrollViewGridItem({
+    required super.key,
+    required super.widget,
+  });
+
+  num get mainAxisSize;
+  int get crossAxisSize;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ReorderableStaggeredScrollViewGridItem &&
+        key == other.key &&
+        mainAxisSize == other.mainAxisSize &&
+        crossAxisSize == other.crossAxisSize &&
+        widget == other.widget;
+  }
+
+  @override
+  int get hashCode =>
+      super.hashCode ^ mainAxisSize.hashCode ^ crossAxisSize.hashCode;
+}
+
+/// Represents an item in a grid layout within a [ReorderableStaggeredScrollView].
+class ReorderableStaggeredScrollViewGridCountItem
+    extends ReorderableStaggeredScrollViewGridItem {
   final int mainAxisCellCount;
   final int crossAxisCellCount;
 
@@ -43,7 +75,7 @@ class ReorderableStaggeredScrollViewGridItem
   /// The [mainAxisCellCount] specifies the number of cells along the main axis.
   /// The [crossAxisCellCount] specifies the number of cells along the cross axis.
   /// The [widget] is the widget content of the item.
-  const ReorderableStaggeredScrollViewGridItem({
+  const ReorderableStaggeredScrollViewGridCountItem({
     required super.key,
     required this.mainAxisCellCount,
     required this.crossAxisCellCount,
@@ -51,18 +83,36 @@ class ReorderableStaggeredScrollViewGridItem
   });
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is ReorderableStaggeredScrollViewGridItem &&
-        key == other.key &&
-        mainAxisCellCount == other.mainAxisCellCount &&
-        crossAxisCellCount == other.crossAxisCellCount &&
-        widget == other.widget;
-  }
+  int get crossAxisSize => crossAxisCellCount;
 
   @override
-  int get hashCode =>
-      super.hashCode ^ mainAxisCellCount.hashCode ^ crossAxisCellCount.hashCode;
+  int get mainAxisSize => mainAxisCellCount;
+}
+
+/// Represents an item in a grid layout within a [ReorderableStaggeredScrollView].
+class ReorderableStaggeredScrollViewGridExtentItem
+    extends ReorderableStaggeredScrollViewGridItem {
+  final double mainAxisExtent;
+  final int crossAxisCellCount;
+
+  /// Creates a [ReorderableStaggeredScrollViewGridItem].
+  ///
+  /// The [key] is a required unique identifier for the item.
+  /// The [mainAxisExtent] specifies the size extent along the main axis.
+  /// The [crossAxisCellCount] specifies the number of cells along the cross axis.
+  /// The [widget] is the widget content of the item.
+  const ReorderableStaggeredScrollViewGridExtentItem({
+    required super.key,
+    required this.mainAxisExtent,
+    required this.crossAxisCellCount,
+    required super.widget,
+  });
+
+  @override
+  int get crossAxisSize => crossAxisCellCount;
+
+  @override
+  double get mainAxisSize => mainAxisExtent;
 }
 
 /// A scrollable list or grid with reordering and drag-and-drop support.
@@ -400,22 +450,34 @@ class _ReorderableStaggeredScrollViewState
       isNotDragList: widget.isNotDragList,
       items: (ReorderableStaggeredScrollViewListItem element,
           DraggableWidget draggableWidget) {
-        return widget.isList
-            ? Container(
-                key: ValueKey(element.key.toString()),
-                child: draggableWidget(element.widget),
-              )
-            : StaggeredGridTile.count(
-                key: ValueKey(element.key.toString()),
-                mainAxisCellCount:
-                    (element as ReorderableStaggeredScrollViewGridItem)
-                        .mainAxisCellCount,
-                crossAxisCellCount:
-                    // ignore: unnecessary_cast
-                    (element as ReorderableStaggeredScrollViewGridItem)
-                        .crossAxisCellCount,
-                child: draggableWidget(element.widget),
-              );
+        if (widget.isList) {
+          return Container(
+            key: ValueKey(element.key.toString()),
+            child: draggableWidget(element.widget),
+          );
+        }
+
+        if (element is ReorderableStaggeredScrollViewGridCountItem) {
+          return StaggeredGridTile.count(
+            key: ValueKey(element.key.toString()),
+            mainAxisCellCount: element.mainAxisCellCount,
+            crossAxisCellCount: element.crossAxisCellCount,
+            child: draggableWidget(element.widget),
+          );
+        } else if (element is ReorderableStaggeredScrollViewGridExtentItem) {
+          return StaggeredGridTile.extent(
+            key: ValueKey(element.key.toString()),
+            mainAxisExtent: element.mainAxisExtent,
+            crossAxisCellCount: element.crossAxisCellCount,
+            child: draggableWidget(element.widget),
+          );
+        } else {
+          throw (
+            FlutterError(
+              "Item should be one of ReorderableStaggeredScrollViewGridItem or ReorderableStaggeredScrollViewGridExtentItem but it was ${element.runtimeType}",
+            ),
+          );
+        }
       },
       dataList: _children,
     );
@@ -425,31 +487,29 @@ class _ReorderableStaggeredScrollViewState
   Widget build(BuildContext context) {
     return DragNotification(
       child: (widget.isList
-          ? ListView(
+          ? SingleChildScrollView(
               scrollDirection: widget.scrollDirection,
               physics: widget.physics,
-              children: [
-                buildContainer(
-                  buildItems: (List<Widget> children) {
-                    return ListView(
-                      scrollDirection: widget.scrollDirection,
-                      reverse: widget.reverse,
-                      controller: widget.controller,
-                      primary: widget.primary,
-                      physics: widget.physics,
-                      shrinkWrap: widget.shrinkWrap,
-                      padding: widget.padding,
-                      dragStartBehavior: widget.dragStartBehavior,
-                      keyboardDismissBehavior: widget.keyboardDismissBehavior,
-                      restorationId: widget.restorationId,
-                      clipBehavior: widget.clipBehavior,
-                      children: children,
-                    );
-                  },
-                ),
-              ],
+              child: buildContainer(
+                buildItems: (List<Widget> children) {
+                  return ListView(
+                    scrollDirection: widget.scrollDirection,
+                    reverse: widget.reverse,
+                    controller: widget.controller,
+                    primary: widget.primary,
+                    physics: widget.physics,
+                    shrinkWrap: widget.shrinkWrap,
+                    padding: widget.padding,
+                    dragStartBehavior: widget.dragStartBehavior,
+                    keyboardDismissBehavior: widget.keyboardDismissBehavior,
+                    restorationId: widget.restorationId,
+                    clipBehavior: widget.clipBehavior,
+                    children: children,
+                  );
+                },
+              ),
             )
-          : ListView(
+          : SingleChildScrollView(
               scrollDirection: widget.scrollDirection,
               reverse: widget.reverse,
               controller: widget.controller,
@@ -460,17 +520,15 @@ class _ReorderableStaggeredScrollViewState
               keyboardDismissBehavior: widget.keyboardDismissBehavior,
               restorationId: widget.restorationId,
               clipBehavior: widget.clipBehavior,
-              children: [
-                buildContainer(
-                  buildItems: (List<Widget> children) {
-                    return StaggeredGrid.count(
-                      crossAxisCount: widget.crossAxisCount,
-                      axisDirection: widget.axisDirection,
-                      children: children,
-                    );
-                  },
-                ),
-              ],
+              child: buildContainer(
+                buildItems: (List<Widget> children) {
+                  return StaggeredGrid.count(
+                    crossAxisCount: widget.crossAxisCount,
+                    axisDirection: widget.axisDirection,
+                    children: children,
+                  );
+                },
+              ),
             )),
     );
   }

@@ -22,8 +22,8 @@ class DragItem extends ImplicitlyAnimatedWidget {
     required this.child,
     Duration? duration,
     this.onAnimationStatus,
-    Key? key,
-  }) : super(key: key, duration: duration ?? _animDuration);
+    super.key,
+  }) : super(duration: duration ?? _animDuration);
   final Widget child;
   final AnimationStatusListener? onAnimationStatus;
   static const Duration _animDuration = Duration(milliseconds: 200);
@@ -74,10 +74,9 @@ class _DragAnimRender extends SingleChildRenderObjectWidget {
   const _DragAnimRender(
     this.renderAnimManage,
     this.update, {
-    Key? key,
-    Widget? child,
+    super.child,
     this.change,
-  }) : super(key: key, child: child);
+  });
   final void Function()? change;
   final RenderAnimManage renderAnimManage;
   final double update;

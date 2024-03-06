@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
 
 class HomePage extends StatefulWidget {
   final bool isList;
-  const HomePage({Key? key, required this.isList}) : super(key: key);
+  const HomePage({super.key, required this.isList});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -73,7 +73,7 @@ class _HomePageState extends State<HomePage> {
   bool _dragEnabled = true;
   @override
   Widget build(BuildContext context) {
-    final nonDraggable = ReorderableStaggeredScrollViewGridItem(
+    final nonDraggable = ReorderableStaggeredScrollViewGridCountItem(
       key: ValueKey(10.toString()),
       mainAxisCellCount: 1,
       crossAxisCellCount: Random().nextInt(2) + 1,
@@ -151,7 +151,7 @@ class _HomePageState extends State<HomePage> {
               isNotDragList: [nonDraggable],
               children: List.generate(
                 5,
-                (index) => ReorderableStaggeredScrollViewGridItem(
+                (index) => ReorderableStaggeredScrollViewGridCountItem(
                   key: ValueKey(index.toString()),
                   mainAxisCellCount: 1,
                   crossAxisCellCount: Random().nextInt(2) + 1,
@@ -161,7 +161,7 @@ class _HomePageState extends State<HomePage> {
                   nonDraggable,
                   ...List.generate(
                     5,
-                    (index) => ReorderableStaggeredScrollViewGridItem(
+                    (index) => ReorderableStaggeredScrollViewGridCountItem(
                       key: ValueKey('${index + 5}'),
                       mainAxisCellCount: 1,
                       crossAxisCellCount: Random().nextInt(2) + 1,
