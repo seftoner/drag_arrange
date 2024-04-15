@@ -10,6 +10,31 @@ import 'reorderable_staggered_scroll_view.dart';
 typedef DraggableWidget = Widget Function(Widget child);
 typedef DragTargetOn<T> = Widget Function(T? moveData, T data);
 
+/// Contains information about where an element was dragged from and relocated to.
+/// Is given by the conclusion of a drag event via the [OnWillAccept] or [OnAccept] handlers
+///
+/// - [oldIndex]: The previous index an item was located at
+/// - [newIndex]: The new index an item was, or potentially will be, relocated to
+class AcceptDetails {
+  /// The previous index an item was located at
+  final int oldIndex;
+
+  /// The new index an item was relocated to
+  final int newIndex;
+
+  const AcceptDetails({required this.oldIndex, required this.newIndex});
+
+  @override
+  int get hashCode => 17 * (53 * oldIndex) ^ (29 * newIndex);
+
+  @override
+  bool operator ==(Object other) => identical(other, this) || (other is AcceptDetails && (other.oldIndex == oldIndex && other.newIndex == newIndex));
+
+  @override
+  String toString() => "(oldIndex: $oldIndex, newIndex: $newIndex)";
+}
+
+
 /// A widget that allows for drag-and-drop functionality within a list of items.
 ///
 /// The [DragContainer] widget is designed to manage drag-and-drop interactions
@@ -61,8 +86,8 @@ class DragContainer<T extends ReorderableStaggeredScrollViewListItem>
   final Widget Function(T data, Widget child, Size size)? buildFeedback;
   final bool isLongPressDraggable;
   final Axis? axis;
-  final void Function(T? moveData, T data, bool isFront)? onAccept;
-  final bool Function(T? moveData, T data, bool isFront)? onWillAccept;
+  final void Function(T? moveData, T data, bool isFront, {AcceptDetails? acceptDetails})? onAccept;
+  final bool Function(T? moveData, T data, bool isFront, {AcceptDetails? acceptDetails})? onWillAccept;
   final void Function(T? moveData, T data, bool isFront)? onLeave;
   final void Function(T data, DragTargetDetails<T> details, bool isFront)?
       onMove;
@@ -122,10 +147,14 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
   AnimationStatus status = AnimationStatus.completed;
   bool isDragStart = false;
   T? dragData;
-  Map<T, Size> mapSize = <T, Size>{};
+  Map<T, Size> mapSize = <T, Size>{};  
+  AcceptDetails? acceptDetails;
+  int? originalindex;
+
 
   void endWillAccept() {
     _timer?.cancel();
+    acceptDetails = null;
   }
 
   void setDragStart({bool isDragStart = true}) {
@@ -135,6 +164,9 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
         if (!this.isDragStart) {
           dragData = null;
         } else {
+          if (dragData != null) {
+            originalindex = widget.dataList.indexOf(dragData!);
+          }
           endWillAccept();
         }
       });
@@ -186,22 +218,25 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
       _timer = Timer(const Duration(milliseconds: 200), () {
         if (!DragNotification.isScroll) {
           if (widget.onWillAccept != null) {
-            widget.onWillAccept?.call(moveData, data, isFront);
+            widget.onWillAccept?.call(moveData, data, isFront, acceptDetails: acceptDetails);
           } else if (moveData != null) {
+            final int oldIndex = widget.dataList.indexOf(moveData);
+            int newIndex = widget.dataList.indexOf(data);
             setState(() {
-              final int index = widget.dataList.indexOf(data);
               if (isFront) {
-                widget.dataList.remove(moveData);
-                widget.dataList.insert(index, moveData);
+                widget.dataList.removeAt(oldIndex!);
+                widget.dataList.insert(newIndex, moveData);
               } else {
-                widget.dataList.remove(moveData);
-                if (index + 1 < widget.dataList.length) {
-                  widget.dataList.insert(index + 1, moveData);
+                widget.dataList.removeAt(oldIndex!);
+                if (newIndex + 1 < widget.dataList.length) {
+                  newIndex += 1;
+                  widget.dataList.insert(newIndex, moveData);
                 } else {
-                  widget.dataList.insert(index, moveData);
+                  widget.dataList.insert(newIndex, moveData);
                 }
               }
             });
+            acceptDetails = AcceptDetails(oldIndex: originalindex!, newIndex: newIndex);
           }
         }
       });
@@ -262,7 +297,7 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
                         onAcceptWithDetails: widget.onAccept == null
                             ? null
                             : (DragTargetDetails<T> details) =>
-                                widget.onAccept?.call(details.data, data, true),
+                                widget.onAccept?.call(details.data, data, true, acceptDetails: acceptDetails),
                         onLeave: widget.onLeave == null
                             ? null
                             : (T? moveData) =>
@@ -288,7 +323,7 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
                         onAcceptWithDetails: widget.onAccept == null
                             ? null
                             : (DragTargetDetails<T> details) => widget.onAccept
-                                ?.call(details.data, data, false),
+                                ?.call(details.data, data, false, acceptDetails: acceptDetails),
                         onLeave: widget.onLeave == null
                             ? null
                             : (T? moveData) =>
