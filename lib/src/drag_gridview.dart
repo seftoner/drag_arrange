@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:reorderable_scroll_view/src/drag_container.dart';
-import 'package:reorderable_scroll_view/src/drag_notification.dart';
-import 'package:reorderable_scroll_view/src/models.dart';
-import 'package:reorderable_scroll_view/src/reorderable_scrollview_base.dart';
+import 'package:drag_arrange/src/drag_container.dart';
+import 'package:drag_arrange/src/drag_notification.dart';
+import 'package:drag_arrange/src/models.dart';
+import 'package:drag_arrange/src/drag_scrollview_base.dart';
 
 /// Grid view implementation
-class ReorderableGridView extends ReorderableScrollViewBase {
+class DragGridView extends DragScrollViewBase {
   final int crossAxisCount;
   final AxisDirection? axisDirection;
   final double mainAxisSpacing;
   final double crossAxisSpacing;
   final bool enableShakeAnimation;
 
-  const ReorderableGridView({
+  const DragGridView({
     super.key,
     super.enableReordering = false,
-    required List<GridItem> super.children,
+    required List<DragGridItem> super.children,
     required this.crossAxisCount,
     this.axisDirection,
     this.mainAxisSpacing = 0,
@@ -38,11 +38,11 @@ class ReorderableGridView extends ReorderableScrollViewBase {
   });
 
   @override
-  State<ReorderableGridView> createState() => _ReorderableGridViewState();
+  State<DragGridView> createState() => _ReorderableGridViewState();
 }
 
-class _ReorderableGridViewState extends State<ReorderableGridView> {
-  List<ListItem> _children = const [];
+class _ReorderableGridViewState extends State<DragGridView> {
+  List<DragListItem> _children = const [];
 
   @override
   void initState() {
@@ -51,7 +51,7 @@ class _ReorderableGridViewState extends State<ReorderableGridView> {
   }
 
   @override
-  void didUpdateWidget(ReorderableGridView oldWidget) {
+  void didUpdateWidget(DragGridView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.children != oldWidget.children) {
       setState(() {
@@ -80,15 +80,15 @@ class _ReorderableGridViewState extends State<ReorderableGridView> {
       edgeScrollSpeedMilliseconds: widget.edgeScrollSpeedMilliseconds,
       isNotDragList: widget.isNotDragList,
       enableShakeAnimation: widget.enableShakeAnimation,
-      items: (ListItem element, DraggableWidget draggableWidget) {
-        if (element is GridCountItem) {
+      items: (DragListItem element, DraggableWidget draggableWidget) {
+        if (element is DragGridCountItem) {
           return StaggeredGridTile.count(
             key: ValueKey(element.key.toString()),
             mainAxisCellCount: element.mainAxisCellCount,
             crossAxisCellCount: element.crossAxisCellCount,
             child: draggableWidget(element.widget),
           );
-        } else if (element is GridExtentItem) {
+        } else if (element is DragGridExtentItem) {
           return StaggeredGridTile.extent(
             key: ValueKey(element.key.toString()),
             mainAxisExtent: element.mainAxisExtent,

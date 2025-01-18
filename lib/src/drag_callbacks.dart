@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:reorderable_scroll_view/src/models.dart';
+import 'package:drag_arrange/src/models.dart';
 
 /// A class that holds all drag-related callbacks for the reorderable scroll view.
-class DragCallbacks<T extends ListItem> {
+class DragCallbacks<T extends DragListItem> {
   /// Called when a draggable is dropped onto a [DragTarget].
   final void Function(T? moveData, T data, bool isFront,
       {AcceptDetails? acceptDetails})? onAccept;

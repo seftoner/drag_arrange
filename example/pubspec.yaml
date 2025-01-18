@@ -35,7 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
 
-  reorderable_scroll_view:
+  drag_arrange:
     path: ../
 
 dev_dependencies:

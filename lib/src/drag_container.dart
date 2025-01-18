@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:reorderable_scroll_view/src/drag_callbacks.dart';
-import 'package:reorderable_scroll_view/src/models.dart';
-import 'package:reorderable_scroll_view/src/widgets/shakeConstant/shake_default_constant.dart';
-import 'package:reorderable_scroll_view/src/widgets/shake_widget.dart';
+import 'package:drag_arrange/src/drag_callbacks.dart';
+import 'package:drag_arrange/src/models.dart';
+import 'package:drag_arrange/src/widgets/shakeConstant/shake_default_constant.dart';
+import 'package:drag_arrange/src/widgets/shake_widget.dart';
 
 import 'drag_item.dart';
 import 'drag_notification.dart';
@@ -56,7 +56,7 @@ typedef DragTargetOn<T> = Widget Function(T? moveData, T data);
 ///
 /// To enable drag-and-drop functionality, wrap the list of items with [DragContainer]
 /// and provide the necessary callbacks for managing the drag-and-drop operations.
-class DragContainer<T extends ListItem> extends StatefulWidget {
+class DragContainer<T extends DragListItem> extends StatefulWidget {
   final Widget Function(List<Widget> children) buildItems;
   final Widget Function(T data, DraggableWidget draggableWidget) items;
   final List<T> dataList;
@@ -102,7 +102,7 @@ class DragContainer<T extends ListItem> extends StatefulWidget {
   State<DragContainer> createState() => _DragContainerState();
 }
 
-class _DragContainerState<T extends ListItem> extends State<DragContainer> {
+class _DragContainerState<T extends DragListItem> extends State<DragContainer> {
   Timer? _timer;
   Timer? _scrollableTimer;
   ScrollableState? _scrollable;
@@ -147,7 +147,7 @@ class _DragContainerState<T extends ListItem> extends State<DragContainer> {
   }
 
   @override
-  void didUpdateWidget(DragContainer<ListItem> oldWidget) {
+  void didUpdateWidget(DragContainer<DragListItem> oldWidget) {
     super.didUpdateWidget(oldWidget);
     final List<T> delete = <T>[];
     mapSize.forEach((T key, Size value) {

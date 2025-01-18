@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:reorderable_staggered_scroll_view/reorderable_staggered_scroll_view.dart';
+import 'package:drag_arrange/drag_arrange.dart';
 
 void main() {
   runApp(const MyApp());
@@ -73,7 +73,7 @@ class _HomePageState extends State<HomePage> {
   bool _dragEnabled = true;
   @override
   Widget build(BuildContext context) {
-    final nonDraggable = ReorderableStaggeredScrollViewGridCountItem(
+    final nonDraggable = DragGridCountItem(
       key: ValueKey(10.toString()),
       mainAxisCellCount: 1,
       crossAxisCellCount: Random().nextInt(2) + 1,
@@ -99,21 +99,25 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: widget.isList
-          ? ReorderableStaggeredScrollView.list(
-              enable: _dragEnabled,
-              padding: const EdgeInsets.all(16),
-              physics: const BouncingScrollPhysics(),
-              scrollDirection: Axis.vertical,
+          ? DragListView(
+              enableReordering: _dragEnabled,
+              scrollViewOptions: const ScrollViewOptions(
+                padding: EdgeInsets.all(16),
+                scrollDirection: Axis.vertical,
+                physics: BouncingScrollPhysics(),
+                shrinkWrap: true,
+              ),
+              dragCallbacks: DragCallbacks(
+                onDragEnd: (details, item) {
+                  debugPrint('onDragEnd: $details ${item.key}');
+                },
+              ),
               axis: Axis.vertical,
-              shrinkWrap: true,
               isLongPressDraggable: false,
-              onDragEnd: (details, item) {
-                debugPrint('onDragEnd: $details ${item.key}');
-              },
               isNotDragList: [nonDraggable],
               children: List.generate(
                 5,
-                (index) => ReorderableStaggeredScrollViewListItem(
+                (index) => DragListItem(
                   key: ValueKey(index.toString()),
                   widget: Card(
                       child: Padding(
@@ -126,7 +130,7 @@ class _HomePageState extends State<HomePage> {
                     nonDraggable,
                     ...List.generate(
                       5,
-                      (index) => ReorderableStaggeredScrollViewListItem(
+                      (index) => DragListItem(
                         key: ValueKey('${index + 5}'),
                         widget: Card(
                             child: Padding(
@@ -138,22 +142,29 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
             )
-          : ReorderableStaggeredScrollView.grid(
-              enable: _dragEnabled,
-              padding: const EdgeInsets.all(16),
+          : DragGridView(
+              enableReordering: _dragEnabled,
+              scrollViewOptions: const ScrollViewOptions(
+                padding: EdgeInsets.all(16),
+                scrollDirection: Axis.vertical,
+                physics: BouncingScrollPhysics(),
+              ),
+
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              scrollDirection: Axis.vertical,
-              physics: const BouncingScrollPhysics(),
+              dragCallbacks: DragCallbacks(
+                onDragEnd: (details, item) {
+                  print('onDragEnd: $details ${item.key}');
+                },
+              ),
+
               crossAxisCount: 4,
               isLongPressDraggable: false,
-              onDragEnd: (details, item) {
-                print('onDragEnd: $details ${item.key}');
-              },
+
               isNotDragList: [nonDraggable],
               children: List.generate(
                 5,
-                (index) => ReorderableStaggeredScrollViewGridCountItem(
+                (index) => DragGridCountItem(
                   key: ValueKey(index.toString()),
                   mainAxisCellCount: 1,
                   crossAxisCellCount: Random().nextInt(2) + 1,
@@ -163,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                   nonDraggable,
                   ...List.generate(
                     5,
-                    (index) => ReorderableStaggeredScrollViewGridCountItem(
+                    (index) => DragGridCountItem(
                       key: ValueKey('${index + 5}'),
                       mainAxisCellCount: 1,
                       crossAxisCellCount: Random().nextInt(2) + 1,

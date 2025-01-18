@@ -1,14 +1,14 @@
 import 'package:flutter/widgets.dart';
-import 'package:reorderable_scroll_view/src/drag_container.dart';
-import 'package:reorderable_scroll_view/src/drag_notification.dart';
-import 'package:reorderable_scroll_view/src/reorderable_scrollview_base.dart';
+import 'package:drag_arrange/src/drag_container.dart';
+import 'package:drag_arrange/src/drag_notification.dart';
+import 'package:drag_arrange/src/drag_scrollview_base.dart';
 import 'models.dart';
 
 /// List view implementation
-class ReorderableListView extends ReorderableScrollViewBase {
-  const ReorderableListView({
+class DragListView extends DragScrollViewBase {
+  const DragListView({
     super.key,
-    super.enableReordering = true,
+    super.enableReordering = false,
     required super.children,
     super.isLongPressDraggable = true,
     super.buildFeedback,
@@ -25,11 +25,11 @@ class ReorderableListView extends ReorderableScrollViewBase {
   });
 
   @override
-  State<ReorderableListView> createState() => _ReorderableListViewState();
+  State<DragListView> createState() => _ReorderableListViewState();
 }
 
-class _ReorderableListViewState extends State<ReorderableListView> {
-  List<ListItem> _children = const [];
+class _ReorderableListViewState extends State<DragListView> {
+  List<DragListItem> _children = const [];
 
   @override
   void initState() {
@@ -38,7 +38,7 @@ class _ReorderableListViewState extends State<ReorderableListView> {
   }
 
   @override
-  void didUpdateWidget(ReorderableListView oldWidget) {
+  void didUpdateWidget(DragListView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.children != oldWidget.children) {
       setState(() {
@@ -65,7 +65,7 @@ class _ReorderableListViewState extends State<ReorderableListView> {
       edgeScroll: widget.edgeScroll,
       edgeScrollSpeedMilliseconds: widget.edgeScrollSpeedMilliseconds,
       isNotDragList: widget.isNotDragList,
-      items: (ListItem element, DraggableWidget draggableWidget) {
+      items: (DragListItem element, DraggableWidget draggableWidget) {
         return Container(
           key: ValueKey(element.key.toString()),
           child: draggableWidget(element.widget),

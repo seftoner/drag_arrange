@@ -19,7 +19,7 @@ class ScrollViewOptions {
     this.reverse = false,
     this.controller,
     this.primary,
-    this.physics,
+    this.physics = const BouncingScrollPhysics(),
     this.padding,
     this.dragStartBehavior = DragStartBehavior.start,
     this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,

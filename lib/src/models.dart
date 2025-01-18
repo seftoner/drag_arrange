@@ -1,15 +1,15 @@
 import 'package:flutter/widgets.dart';
 
 /// Represents an item in a [ReorderableStaggeredScrollView].
-class ListItem {
+class DragListItem {
   final Key key;
   final Widget widget;
 
-  /// Creates a [ListItem].
+  /// Creates a [DragListItem].
   ///
   /// The [key] is a required unique identifier for the item.
   /// The [widget] is the widget content of the item.
-  const ListItem({
+  const DragListItem({
     required this.key,
     required this.widget,
   });
@@ -19,7 +19,7 @@ class ListItem {
     if (identical(this, other)) {
       return true;
     }
-    return other is ListItem && key == other.key && widget == other.widget;
+    return other is DragListItem && key == other.key && widget == other.widget;
   }
 
   @override
@@ -27,14 +27,14 @@ class ListItem {
 }
 
 /// Represents an item in a grid layout within a [ReorderableStaggeredScrollView].
-abstract class GridItem extends ListItem {
-  /// Creates a [GridItem].
+abstract class DragGridItem extends DragListItem {
+  /// Creates a [DragGridItem].
   ///
   /// The [key] is a required unique identifier for the item.
   /// The [mainAxisCellCount] specifies the number of cells along the main axis.
   /// The [crossAxisCellCount] specifies the number of cells along the cross axis.
   /// The [widget] is the widget content of the item.
-  const GridItem({
+  const DragGridItem({
     required super.key,
     required super.widget,
   });
@@ -45,7 +45,7 @@ abstract class GridItem extends ListItem {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is GridItem &&
+    return other is DragGridItem &&
         key == other.key &&
         mainAxisSize == other.mainAxisSize &&
         crossAxisSize == other.crossAxisSize &&
@@ -58,17 +58,17 @@ abstract class GridItem extends ListItem {
 }
 
 /// Represents an item in a grid layout within a [ReorderableStaggeredScrollView].
-class GridCountItem extends GridItem {
+class DragGridCountItem extends DragGridItem {
   final int mainAxisCellCount;
   final int crossAxisCellCount;
 
-  /// Creates a [GridItem].
+  /// Creates a [DragGridItem].
   ///
   /// The [key] is a required unique identifier for the item.
   /// The [mainAxisCellCount] specifies the number of cells along the main axis.
   /// The [crossAxisCellCount] specifies the number of cells along the cross axis.
   /// The [widget] is the widget content of the item.
-  const GridCountItem({
+  const DragGridCountItem({
     required super.key,
     required this.mainAxisCellCount,
     required this.crossAxisCellCount,
@@ -83,17 +83,17 @@ class GridCountItem extends GridItem {
 }
 
 /// Represents an item in a grid layout within a [ReorderableStaggeredScrollView].
-class GridExtentItem extends GridItem {
+class DragGridExtentItem extends DragGridItem {
   final double mainAxisExtent;
   final int crossAxisCellCount;
 
-  /// Creates a [GridItem].
+  /// Creates a [DragGridItem].
   ///
   /// The [key] is a required unique identifier for the item.
   /// The [mainAxisExtent] specifies the size extent along the main axis.
   /// The [crossAxisCellCount] specifies the number of cells along the cross axis.
   /// The [widget] is the widget content of the item.
-  const GridExtentItem({
+  const DragGridExtentItem({
     required super.key,
     required this.mainAxisExtent,
     required this.crossAxisCellCount,

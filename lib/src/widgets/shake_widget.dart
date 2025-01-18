@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
-import 'package:reorderable_scroll_view/src/widgets/shakeConstant/shake_constant.dart';
+
+import 'shakeConstant/shake_constant.dart';
 
 class ShakeWidget extends StatefulWidget {
   /// animate widget
