@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:reorderable_scroll_view/src/drag_container.dart';
+import 'package:reorderable_scroll_view/src/drag_notification.dart';
 import 'package:reorderable_scroll_view/src/models.dart';
 import 'package:reorderable_scroll_view/src/reorderable_scrollview_base.dart';
-import 'drag_container.dart';
-import 'drag_notification.dart';
 
 /// Grid view implementation
 class ReorderableGridView extends ReorderableScrollViewBase {
