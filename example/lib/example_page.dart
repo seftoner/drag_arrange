@@ -33,7 +33,8 @@ class _ExamplePageState extends State<ExamplePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Example'),
+        title: const Text('drag_arrange example'),
+        centerTitle: false,
         actions: [
           IconButton(
             onPressed: () {
@@ -74,7 +75,7 @@ class _ExamplePageState extends State<ExamplePage>
 }
 
 class ListTab extends StatefulWidget {
-  final dragEnabled;
+  final bool dragEnabled;
   const ListTab({super.key, required this.dragEnabled});
 
   @override
@@ -252,7 +253,8 @@ class _GridCountTabState extends State<GridCountTab> {
 }
 
 class GridExtentTab extends StatefulWidget {
-  const GridExtentTab({super.key, required bool dragEnabled});
+  final bool dragEnabled;
+  const GridExtentTab({super.key, required this.dragEnabled});
 
   @override
   State<GridExtentTab> createState() => _GridExtentTabState();
@@ -274,7 +276,7 @@ class _GridExtentTabState extends State<GridExtentTab> {
   @override
   Widget build(BuildContext context) {
     return DragGridView(
-      enableReordering: true,
+      enableReordering: widget.dragEnabled,
       mainAxisSpacing: 5,
       crossAxisSpacing: 5,
       scrollViewOptions: const ScrollViewOptions(
