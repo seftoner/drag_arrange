@@ -1,74 +1,99 @@
-# reorderable_staggered_scroll_view
+# drag_arrange
 
-[![pub package](https://img.shields.io/pub/v/reorderable_staggered_scroll_view.svg)](https://pub.dartlang.org/packages/reorderable_staggered_scroll_view) [![GitHub license](https://img.shields.io/github/license/itisnajim/reorderable_staggered_scroll_view)](https://github.com/itisnajim/reorderable_staggered_scroll_view/blob/master/LICENSE)  [![GitHub issues](https://img.shields.io/github/issues/itisnajim/reorderable_staggered_scroll_view)](https://github.com/itisnajim/reorderable_staggered_scroll_view/issues)
+A Flutter package for creating draggable and reorderable grid and list views with extensive customization options. This package provides a smooth and intuitive way to reorder items in both grid and list layouts, perfect for creating interactive user interfaces.
 
-A Flutter package for creating reorderable and draggable staggered grid and list views. This package provides a smooth and intuitive way to reorder items in both grid and list layouts, making it perfect for creating interactive and user-friendly applications.
-
-| List Demo | Grid Demo |
-|:---:|:---:|
-| ![List](https://raw.githubusercontent.com/itisnajim/reorderable_staggered_scroll_view/main/readme/list.gif) | ![Grid](https://raw.githubusercontent.com/itisnajim/reorderable_staggered_scroll_view/main/readme/grid.gif) |
-
+|                                       List Demo                                        |                                       Grid Demo                                        |
+| :------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------: |
+| ![List](https://raw.githubusercontent.com/itisnajim/drag_arrange/main/readme/list.gif) | ![Grid](https://raw.githubusercontent.com/itisnajim/drag_arrange/main/readme/grid.gif) |
 
 ## Features
 
-* Reorder items with ease using drag and drop gestures.
-* Supports both staggered grid and list layouts.
-* Configurable drag-and-drop behavior.
-* Designed for a seamless user experience.
+* Supports both list and grid layouts with drag-and-drop functionality
+* Three main widget types: DragListView, DragGridView with count, and DragGridView with extent
+* Customizable drag animations and behaviors
+* Built-in shake animations
+* Configurable scroll physics and view options
 
 ## Getting Started
 
-To use this package, add it to your pubspec.yaml file:
-
+Add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
-  reorderable_staggered_scroll_view: ^latest_version
+  drag_arrange: ^latest_version
 ```
-Replace ^latest_version with the actual version you want to use.
 
-Import the package in your Dart code:
+Import the package:
 
 ```dart
-import 'package:reorderable_staggered_scroll_view/reorderable_staggered_scroll_view.dart';
+import 'package:drag_arrange/drag_arrange.dart';
 ```
 
 ## Usage
 
-### Grid
+### List View
 
 ```dart
-ReorderableStaggeredScrollView.grid(
-  enable: _dragEnabled,
-  padding: const EdgeInsets.all(16),
-  scrollDirection: Axis.vertical,
-  physics: const BouncingScrollPhysics(),
-  crossAxisCount: 4,
-  isLongPressDraggable: false,
-  onDragEnd: (details, item) {
-    print('onDragEnd: $details ${item.key}');
-  },
-  children: List.generate(
-    10,
-    (index) => ReorderableStaggeredScrollViewGridItem(
-      key: ValueKey(index.toString()),
-      mainAxisCellCount: 1,
-      crossAxisCellCount: Random().nextInt(2) + 1,
-      widget: Card(
-        child: Center(child: Text('Item $index')),
-      ),
-    ),
+DragListView(
+  enableReordering: true,
+  axis: Axis.vertical,
+  scrollViewOptions: const ScrollViewOptions(
+    shrinkWrap: true,
+    padding: EdgeInsets.all(16),
+    physics: BouncingScrollPhysics(),
   ),
+  children: items.map((item) => 
+    DragListItem(
+      key: ValueKey(item.id),
+      widget: YourItemWidget(),
+    ),
+  ).toList(),
 );
 ```
 
-### List
+### Grid View with Count
 
-For a list view of items use `list` constructor:
 ```dart
-ReorderableStaggeredScrollView.list(
-  ...
-)
+DragGridView(
+  enableReordering: true,
+  enableShakeAnimation: true,
+  scrollViewOptions: const ScrollViewOptions(
+    padding: EdgeInsets.all(16),
+  ),
+  crossAxisCount: 4,
+  mainAxisSpacing: 8,
+  crossAxisSpacing: 8,
+  children: items.map((item) =>
+    DragGridCountItem(
+      key: ValueKey(item.id),
+      mainAxisCellCount: 1,
+      crossAxisCellCount: 2,
+      widget: YourGridItemWidget(),
+    ),
+  ).toList(),
+);
+```
+
+### Grid View with Extent
+
+```dart
+DragGridView(
+  enableReordering: true,
+  mainAxisSpacing: 5,
+  crossAxisSpacing: 5,
+  scrollViewOptions: const ScrollViewOptions(
+    padding: EdgeInsets.all(16),
+  ),
+  crossAxisCount: 4,
+  children: items.map((item) =>
+    DragGridExtentItem(
+      key: ValueKey(item.id),
+      mainAxisExtent: 150,
+      crossAxisCellCount: 2,
+      widget: YourGridItemWidget(),
+    ),
+  ).toList(),
+);
 ```
 
 ### Custom
@@ -89,8 +114,8 @@ DragNotification(
             children: children,
           );
         },
-        dataList: yourList, // Your List of ReorderableStaggeredScrollViewListItem or ReorderableStaggeredScrollViewGridItem
-        items: (ReorderableStaggeredScrollViewListItem element, DraggableWidget draggableWidget) {
+        dataList: yourList, // Your List of DragListItem or DragGridItem
+        items: (DragListItem element, DraggableWidget draggableWidget) {
           // Map each item in your dataList into a draggable widget
           return Container(
             key: ValueKey(element.key.toString()),
@@ -104,16 +129,18 @@ DragNotification(
 ```
 Replace the comments with your actual widget configuration and data. This setup will allow you to use the ReorderableStaggeredScrollView package with your custom widget.
 
-For more detailed usage instructions and configuration options, refer to the [example](https://github.com/itisnajim/reorderable_staggered_scroll_view/tree/main/example) directory in this repository.
+## Credits
 
+This package is built on top of [flutter_staggered_grid_view](https://pub.dev/packages/flutter_staggered_grid_view) and is a fork of the original work by [itisnajim](https://github.com/itisnajim).
 
-## Contributing
+## Authors
 
-We welcome contributions! If you have ideas for improvements or encounter issues, please open an issue or submit a pull request.
+Current Maintainer:
+- [seftoner](https://github.com/seftoner)
 
-## Author
-
-itisnajim, itisnajim@gmail.com
+Original Author:
+- [itisnajim](https://github.com/itisnajim) (itisnajim@gmail.com)
 
 ## License
-This package is licensed under the MIT License. See the LICENSE file for more details.
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
