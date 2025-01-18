@@ -1,7 +1,7 @@
 name: drag_arrange
 description: A Flutter package for creating reorderable staggered grid views.
 version: 0.0.3
-repository: https://github.com/itisnajim/reorderable_staggered_scroll_view
+repository: https://github.com/seftoner/drag_arrange.git
 
 environment:
   sdk: ">=3.1.2 <4.0.0"
