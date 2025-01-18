@@ -4,16 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'main.dart';
 
 void main() {
-  group('ReorderableStaggeredScrollView Tests', () {
+  group('ReorderableScrollView Tests', () {
     testWidgets('Test if toggling drag enables works',
         (WidgetTester tester) async {
       // Build our app and trigger a frame.
       await tester.pumpWidget(const MaterialApp(home: MyApp()));
-      //print('MyApp::');
+
       // Tap the "Grid" button to navigate to the next page.
       await tester.tap(find.text('Grid'));
       await tester.pumpAndSettle(); // Wait for the navigation to complete.
-      //print('Grid::');
 
       // Find and tap the icon on the next page.
       await tester.tap(find.byIcon(Icons.pause));

@@ -141,6 +141,8 @@ class _HomePageState extends State<HomePage> {
           : ReorderableStaggeredScrollView.grid(
               enable: _dragEnabled,
               padding: const EdgeInsets.all(16),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
               scrollDirection: Axis.vertical,
               physics: const BouncingScrollPhysics(),
               crossAxisCount: 4,

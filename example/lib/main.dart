@@ -16,39 +16,12 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Builder(builder: (context) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Example'),
-          ),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                for (final type in GridType.values)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HomePage(type: type),
-                          ),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(switch (type) {
-                          GridType.list => "List",
-                          GridType.count => "Grid Count",
-                          GridType.extent => "Grid Extent",
-                        }),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
+            // appBar: AppBar(
+            //   title: const Text('Example'),
+            // ),
+            body: const HomePage(
+          type: GridType.count,
+        ));
       }),
     );
   }
@@ -147,33 +120,36 @@ class _HomePageState extends State<HomePage> {
           : ReorderableStaggeredScrollView.grid(
               enable: _dragEnabled,
               padding: const EdgeInsets.all(16),
-              scrollDirection: Axis.vertical,
-              physics: const BouncingScrollPhysics(),
+              // scrollDirection: Axis.vertical,
+              // physics: const BouncingScrollPhysics(),
               crossAxisCount: 4,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
               isLongPressDraggable: false,
-              onAccept: (item1, item2, value) {
+              onAccept: (item1, item2, value, {AcceptDetails? acceptDetails}) {
+                print(
+                    "Moved From: ${acceptDetails?.oldIndex} To ${acceptDetails?.newIndex}");
                 print('item1 $item1 item2 $item2 value $value');
               },
               onDragEnd: (details, item) {
-                print('onDragEnd: $details ${item.key}');
+                // print('onDragEnd: $details ${item.key}');
               },
               onMove: (item, item2, value) {
                 print('onMove: item $item item2 $item2 value $value');
               },
               onDragUpdate: (details, item) {
-                print('onDragUpdate: details $details item $item');
+                // print('onDragUpdate: details $details item $item');
               },
               isNotDragList: [
                   nonDraggable
                 ],
               children: [
                   ...List.generate(
-                    5,
-                    (index) => widget.type == GridType.count
-                        ? ReorderableStaggeredScrollViewGridCountItem(
+                      15,
+                      (index) => ReorderableStaggeredScrollViewGridCountItem(
                             key: ValueKey(index.toString()),
-                            mainAxisCellCount: 1,
-                            crossAxisCellCount: Random().nextInt(2) + 1,
+                            mainAxisCellCount: Random().nextInt(2) + 1,
+                            crossAxisCellCount: 2,
                             widget:
                                 Card(child: Center(child: Text('Item $index'))),
                           )

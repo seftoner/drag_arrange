@@ -1,39 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:reorderable_scroll_view/src/drag_callbacks.dart';
+import 'package:reorderable_scroll_view/src/models.dart';
+import 'package:reorderable_scroll_view/src/widgets/shakeConstant/shake_default_constant.dart';
+import 'package:reorderable_scroll_view/src/widgets/shake_widget.dart';
 
 import 'drag_item.dart';
 import 'drag_notification.dart';
 import 'render_box_size.dart';
-import 'reorderable_staggered_scroll_view.dart';
 
 typedef DraggableWidget = Widget Function(Widget child);
 typedef DragTargetOn<T> = Widget Function(T? moveData, T data);
-
-/// Contains information about where an element was dragged from and relocated to.
-/// Is given by the conclusion of a drag event via the [OnWillAccept] or [OnAccept] handlers
-///
-/// - [oldIndex]: The previous index an item was located at
-/// - [newIndex]: The new index an item was, or potentially will be, relocated to
-class AcceptDetails {
-  /// The previous index an item was located at
-  final int oldIndex;
-
-  /// The new index an item was relocated to
-  final int newIndex;
-
-  const AcceptDetails({required this.oldIndex, required this.newIndex});
-
-  @override
-  int get hashCode => 17 * (53 * oldIndex) ^ (29 * newIndex);
-
-  @override
-  bool operator ==(Object other) => identical(other, this) || (other is AcceptDetails && (other.oldIndex == oldIndex && other.newIndex == newIndex));
-
-  @override
-  String toString() => "(oldIndex: $oldIndex, newIndex: $newIndex)";
-}
-
 
 /// A widget that allows for drag-and-drop functionality within a list of items.
 ///
@@ -78,27 +56,15 @@ class AcceptDetails {
 ///
 /// To enable drag-and-drop functionality, wrap the list of items with [DragContainer]
 /// and provide the necessary callbacks for managing the drag-and-drop operations.
-class DragContainer<T extends ReorderableStaggeredScrollViewListItem>
-    extends StatefulWidget {
+class DragContainer<T extends ListItem> extends StatefulWidget {
   final Widget Function(List<Widget> children) buildItems;
   final Widget Function(T data, DraggableWidget draggableWidget) items;
   final List<T> dataList;
   final Widget Function(T data, Widget child, Size size)? buildFeedback;
   final bool isLongPressDraggable;
   final Axis? axis;
-  final void Function(T? moveData, T data, bool isFront, {AcceptDetails? acceptDetails})? onAccept;
-  final bool Function(T? moveData, T data, bool isFront, {AcceptDetails? acceptDetails})? onWillAccept;
-  final void Function(T? moveData, T data, bool isFront)? onLeave;
-  final void Function(T data, DragTargetDetails<T> details, bool isFront)?
-      onMove;
   final Axis scrollDirection;
   final HitTestBehavior hitTestBehavior;
-  final void Function(T data)? onDragStarted;
-  final void Function(DragUpdateDetails details, T data)? onDragUpdate;
-  final void Function(Velocity velocity, Offset offset, T data)?
-      onDraggableCanceled;
-  final void Function(DraggableDetails details, T data)? onDragEnd;
-  final void Function(T data)? onDragCompleted;
   final ScrollController? scrollController;
   final bool isDragNotification;
   final double draggingWidgetOpacity;
@@ -106,6 +72,9 @@ class DragContainer<T extends ReorderableStaggeredScrollViewListItem>
   final int edgeScrollSpeedMilliseconds;
   final bool isDrag;
   final List<T>? isNotDragList;
+  final BoxDecoration? dragChildBoxDecoration;
+  final bool enableShakeAnimation;
+  final DragCallbacks<T> dragCallbacks;
 
   const DragContainer({
     required this.buildItems,
@@ -114,17 +83,8 @@ class DragContainer<T extends ReorderableStaggeredScrollViewListItem>
     this.isLongPressDraggable = true,
     this.buildFeedback,
     this.axis,
-    this.onAccept,
-    this.onWillAccept,
-    this.onLeave,
-    this.onMove,
     this.hitTestBehavior = HitTestBehavior.translucent,
     this.scrollDirection = Axis.vertical,
-    this.onDragStarted,
-    this.onDragUpdate,
-    this.onDraggableCanceled,
-    this.onDragEnd,
-    this.onDragCompleted,
     this.scrollController,
     this.isDragNotification = false,
     this.draggingWidgetOpacity = 0.5,
@@ -132,6 +92,9 @@ class DragContainer<T extends ReorderableStaggeredScrollViewListItem>
     this.edgeScrollSpeedMilliseconds = 100,
     this.isDrag = true,
     this.isNotDragList,
+    this.dragChildBoxDecoration,
+    this.enableShakeAnimation = false,
+    this.dragCallbacks = const DragCallbacks(),
     super.key,
   });
 
@@ -139,18 +102,16 @@ class DragContainer<T extends ReorderableStaggeredScrollViewListItem>
   State<DragContainer> createState() => _DragContainerState();
 }
 
-class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
-    extends State<DragContainer> {
+class _DragContainerState<T extends ListItem> extends State<DragContainer> {
   Timer? _timer;
   Timer? _scrollableTimer;
   ScrollableState? _scrollable;
   AnimationStatus status = AnimationStatus.completed;
   bool isDragStart = false;
   T? dragData;
-  Map<T, Size> mapSize = <T, Size>{};  
+  Map<T, Size> mapSize = <T, Size>{};
   AcceptDetails? acceptDetails;
   int? originalindex;
-
 
   void endWillAccept() {
     _timer?.cancel();
@@ -186,7 +147,7 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
   }
 
   @override
-  void didUpdateWidget(oldWidget) {
+  void didUpdateWidget(DragContainer<ListItem> oldWidget) {
     super.didUpdateWidget(oldWidget);
     final List<T> delete = <T>[];
     mapSize.forEach((T key, Size value) {
@@ -217,17 +178,18 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
       endWillAccept();
       _timer = Timer(const Duration(milliseconds: 200), () {
         if (!DragNotification.isScroll) {
-          if (widget.onWillAccept != null) {
-            widget.onWillAccept?.call(moveData, data, isFront, acceptDetails: acceptDetails);
+          if (widget.dragCallbacks.onWillAccept != null) {
+            widget.dragCallbacks.onWillAccept
+                ?.call(moveData, data, isFront, acceptDetails: acceptDetails);
           } else if (moveData != null) {
             final int oldIndex = widget.dataList.indexOf(moveData);
             int newIndex = widget.dataList.indexOf(data);
             setState(() {
               if (isFront) {
-                widget.dataList.removeAt(oldIndex!);
+                widget.dataList.removeAt(oldIndex);
                 widget.dataList.insert(newIndex, moveData);
               } else {
-                widget.dataList.removeAt(oldIndex!);
+                widget.dataList.removeAt(oldIndex);
                 if (newIndex + 1 < widget.dataList.length) {
                   newIndex += 1;
                   widget.dataList.insert(newIndex, moveData);
@@ -236,7 +198,8 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
                 }
               }
             });
-            acceptDetails = AcceptDetails(oldIndex: originalindex!, newIndex: newIndex);
+            acceptDetails =
+                AcceptDetails(oldIndex: originalindex!, newIndex: newIndex);
           }
         }
       });
@@ -267,7 +230,7 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
     final Widget keyWidget = child;
     return DragItem(
         child: Stack(
-          children: <Widget>[
+          children: [
             if (isDragStart &&
                 dragData == data &&
                 widget.draggingWidgetOpacity > 0)
@@ -280,7 +243,17 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
               Visibility(
                 maintainState: true,
                 visible: dragData != data,
-                child: keyWidget,
+                child: widget.enableShakeAnimation && widget.isDrag
+                    ? ShakeWidget(
+                        shakeConstant: RandomShakeConstant(
+                          offsetX: const ShakeRange(min: -1.5, max: 1.5),
+                          offsetY: const ShakeRange(min: -1.5, max: 1.5),
+                          rotation: const ShakeRange(min: -0.3, max: 1.5),
+                        ),
+                        enabled: true,
+                        child: keyWidget,
+                      )
+                    : keyWidget,
               ),
             if (isDragStart && !isContains(data))
               Flex(
@@ -294,18 +267,21 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
                           setWillAccept(details.data, data);
                           return true;
                         },
-                        onAcceptWithDetails: widget.onAccept == null
+                        onAcceptWithDetails: widget.dragCallbacks.onAccept == null
                             ? null
-                            : (DragTargetDetails<T> details) =>
-                                widget.onAccept?.call(details.data, data, true, acceptDetails: acceptDetails),
-                        onLeave: widget.onLeave == null
+                            : (DragTargetDetails<T> details) => widget
+                                .dragCallbacks.onAccept
+                                ?.call(details.data, data, true,
+                                    acceptDetails: acceptDetails),
+                        onLeave: widget.dragCallbacks.onLeave == null
                             ? null
-                            : (T? moveData) =>
-                                widget.onLeave?.call(moveData, data, true),
-                        onMove: widget.onMove == null
+                            : (T? moveData) => widget.dragCallbacks.onLeave
+                                ?.call(moveData, data, true),
+                        onMove: widget.dragCallbacks.onMove == null
                             ? null
-                            : (DragTargetDetails<T> details) =>
-                                widget.onMove?.call(data, details, true),
+                            : (DragTargetDetails<T> details) => widget
+                                .dragCallbacks.onMove
+                                ?.call(data, details, true),
                         hitTestBehavior: widget.hitTestBehavior,
                         builder: (BuildContext context, List<T?> candidateData,
                             List<dynamic> rejectedData) {
@@ -320,18 +296,21 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
                           setWillAccept(details.data, data, isFront: false);
                           return true;
                         },
-                        onAcceptWithDetails: widget.onAccept == null
+                        onAcceptWithDetails: widget.dragCallbacks.onAccept == null
                             ? null
-                            : (DragTargetDetails<T> details) => widget.onAccept
-                                ?.call(details.data, data, false, acceptDetails: acceptDetails),
-                        onLeave: widget.onLeave == null
+                            : (DragTargetDetails<T> details) => widget
+                                .dragCallbacks.onAccept
+                                ?.call(details.data, data, false,
+                                    acceptDetails: acceptDetails),
+                        onLeave: widget.dragCallbacks.onLeave == null
                             ? null
-                            : (T? moveData) =>
-                                widget.onLeave?.call(moveData, data, false),
-                        onMove: widget.onMove == null
+                            : (T? moveData) => widget.dragCallbacks.onLeave
+                                ?.call(moveData, data, false),
+                        onMove: widget.dragCallbacks.onMove == null
                             ? null
-                            : (DragTargetDetails<T> details) =>
-                                widget.onMove?.call(data, details, false),
+                            : (DragTargetDetails<T> details) => widget
+                                .dragCallbacks.onMove
+                                ?.call(data, details, false),
                         hitTestBehavior: widget.hitTestBehavior,
                         builder: (BuildContext context, List<T?> candidateData,
                             List<dynamic> rejectedData) {
@@ -348,6 +327,8 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
   Widget setDraggable(T data) {
     final Widget draggable = widget.items(data, (Widget father) {
       Widget child = setDragScope(data, father);
+
+      // Then apply drag functionality
       if (widget.isDrag && !isContains(data)) {
         if (widget.isLongPressDraggable) {
           child = LongPressDraggable<T>(
@@ -357,25 +338,26 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
             onDragStarted: () {
               dragData = data;
               setDragStart();
-              widget.onDragStarted?.call(data);
+              widget.dragCallbacks.onDragStarted?.call(data);
             },
             onDragUpdate: (DragUpdateDetails details) {
               _autoScrollIfNecessary(details.globalPosition, father);
-              widget.onDragUpdate?.call(details, data);
+              widget.dragCallbacks.onDragUpdate?.call(details, data);
             },
             onDraggableCanceled: (Velocity velocity, Offset offset) {
               setDragStart(isDragStart: false);
               endAnimation();
-              widget.onDraggableCanceled?.call(velocity, offset, data);
+              widget.dragCallbacks.onDraggableCanceled
+                  ?.call(velocity, offset, data);
             },
             onDragEnd: (details) {
               setDragStart(isDragStart: false);
-              widget.onDragEnd?.call(details, data);
+              widget.dragCallbacks.onDragEnd?.call(details, data);
             },
             onDragCompleted: () {
               setDragStart(isDragStart: false);
               endAnimation();
-              widget.onDragCompleted?.call(data);
+              widget.dragCallbacks.onDragCompleted?.call(data);
             },
             child: child,
           );
@@ -387,25 +369,26 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
             onDragStarted: () {
               dragData = data;
               setDragStart();
-              widget.onDragStarted?.call(data);
+              widget.dragCallbacks.onDragStarted?.call(data);
             },
             onDragUpdate: (DragUpdateDetails details) {
               _autoScrollIfNecessary(details.globalPosition, father);
-              widget.onDragUpdate?.call(details, data);
+              widget.dragCallbacks.onDragUpdate?.call(details, data);
             },
             onDraggableCanceled: (Velocity velocity, Offset offset) {
               setDragStart(isDragStart: false);
               endAnimation();
-              widget.onDraggableCanceled?.call(velocity, offset, data);
+              widget.dragCallbacks.onDraggableCanceled
+                  ?.call(velocity, offset, data);
             },
             onDragEnd: (DraggableDetails details) {
               setDragStart(isDragStart: false);
-              widget.onDragEnd?.call(details, data);
+              widget.dragCallbacks.onDragEnd?.call(details, data);
             },
             onDragCompleted: () {
               setDragStart(isDragStart: false);
               endAnimation();
-              widget.onDragCompleted?.call(data);
+              widget.dragCallbacks.onDragCompleted?.call(data);
             },
             child: child,
           );
@@ -413,6 +396,7 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
       }
       return child;
     });
+
     return RenderBoxSize(
       draggable,
       (Size size) {
@@ -427,9 +411,10 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
 
   Widget setFeedback(T data, Widget e) {
     final Size size = getRenderBoxSize(data);
-    final Widget child = SizedBox(
+    final Widget child = Container(
       width: size.width,
       height: size.height,
+      decoration: widget.dragChildBoxDecoration,
       child: e,
     );
     return widget.buildFeedback?.call(data, child, size) ?? child;
@@ -522,6 +507,7 @@ class _DragContainerState<T extends ReorderableStaggeredScrollViewListItem>
   void dispose() {
     endWillAccept();
     endAnimation();
+    endWillAccept();
     super.dispose();
   }
 }
